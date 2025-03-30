@@ -17,7 +17,7 @@ public class FirebaseConfig {
 
     // Bean to initialize FirebaseApp
     @Bean
-    public FirebaseApp firebaseApp() throws IOException {
+    FirebaseApp firebaseApp() throws IOException {
         // Load the service account JSON file from the classpath (resources)
         Resource resource = new ClassPathResource("firebase-service-account.json");
         
@@ -39,7 +39,7 @@ public class FirebaseConfig {
 
     // Bean to initialize FirebaseAuth
     @Bean
-    public FirebaseAuth firebaseAuth() throws IOException {
+    FirebaseAuth firebaseAuth() throws IOException {
         return FirebaseAuth.getInstance(firebaseApp());
     }
 }

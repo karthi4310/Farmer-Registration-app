@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,20 +22,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.farmer.farmermanagement.security.CustomUserDetailsService;
 import com.farmer.farmermanagement.security.JwtAuthenticationFilter;
-import com.farmer.farmermanagement.security.LoginHandler;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-	private JwtAuthenticationFilter jwtAuthenticationFilter;
-	private LoginHandler loginHandler;
-	private CustomUserDetailsService userDetailsService;
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+	private final CustomUserDetailsService userDetailsService;
 
-	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, LoginHandler loginHandler,
+	public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
 			CustomUserDetailsService userDetailsService) {
-		super();
 		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-		this.loginHandler = loginHandler;
 		this.userDetailsService = userDetailsService;
 	}
 
@@ -41,17 +39,22 @@ public class SecurityConfig {
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.csrf(AbstractHttpConfigurer::disable) // Disable CSRF for APIs
 				.cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // No
-																												// session
-																												// stored
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/public/**", "/api/user/**").permitAll() // Publicendpoints
-						.requestMatchers("/api/admin/**").hasRole("ADMIN") // Admin-only access
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless
+				.authorizeHttpRequests(auth -> auth
+						// Public endpoints that do not require authentication
+						.requestMatchers("/api/auth/login", "/api/user/**").permitAll()
+						// Admin-only access
+						.requestMatchers("/api/admin/**").hasRole("ADMIN")
+						// All other requests require authentication
 						.anyRequest().authenticated())
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-				.formLogin(form -> form.successHandler(loginHandler) // Attach the custom LoginHandler
-				);
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter
 
 		return http.build();
+	}
+
+	@Bean
+	AuthenticationManager authenticationManager() {
+		return new ProviderManager(List.of(authProvider()));
 	}
 
 	@Bean
@@ -78,5 +81,4 @@ public class SecurityConfig {
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
 	}
-
 }

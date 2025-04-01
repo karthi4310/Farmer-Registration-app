@@ -1,6 +1,10 @@
 package com.farmer.farmermanagement.controller;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -8,9 +12,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.farmer.farmermanagement.dto.LoginRequest;
 import com.farmer.farmermanagement.dto.UserDTO;
 import com.farmer.farmermanagement.dto.UserResponseDTO;
 import com.farmer.farmermanagement.entity.User;
+import com.farmer.farmermanagement.security.JwtUtil;
 import com.farmer.farmermanagement.service.OtpService;
 import com.farmer.farmermanagement.service.UserService;
 
@@ -21,9 +27,26 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
+	private final AuthenticationManager authenticationManager;
+	private final JwtUtil jwtUtil;
 	private final UserService userService;
 	private final OtpService otpService;
+
+	@PostMapping("/login")
+	public ResponseEntity<String> login(@RequestBody LoginRequest request) {
+		// Authenticate the user (This already triggers loadUserByUsername internally)
+		Authentication authentication = authenticationManager
+				.authenticate(new UsernamePasswordAuthenticationToken(request.getUserName(), request.getPassword()));
+
+		// Generate JWT token
+		String token = jwtUtil.generateToken(authentication);
+
+		// Set token in response headers
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
+
+		return ResponseEntity.ok().headers(headers).body("logged in successfully");
+	}
 
 	@PostMapping("/register")
 	public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody UserDTO userDTO) {

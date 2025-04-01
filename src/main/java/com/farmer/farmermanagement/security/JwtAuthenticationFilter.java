@@ -31,24 +31,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
+		// Define a list of public URLs
+		String[] publicUrls = { "/api/auth/login", "/error" }; // Add your public endpoints here
+
+		// Get the requested URL
+		String requestUri = request.getRequestURI();
+
+		// Check if the requested URL is public
+		boolean isPublicUrl = false;
+		for (String url : publicUrls) {
+			if (requestUri.startsWith(url)) {
+				isPublicUrl = true;
+				break;
+			}
+		}
+
+		// If it's a public URL, proceed without validation
+		if (isPublicUrl) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 		// Get the JWT token from the Authorization header
 		String authorizationHeader = request.getHeader("Authorization");
 		String jwtToken = null;
 
 		if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
 			jwtToken = authorizationHeader.substring(7);
-			// Extract the token
+		}
+		if (jwtToken == null) {
+			// Set the HTTP status to 401 (Unauthorized)
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+			// Set the content type to JSON or plain text
+			response.setContentType("application/json");
+
+			// Write the error message directly to the response body
+			response.getWriter()
+					.write("{\"error\": \"unauthorized request redirectio=ng to login page , please log in.\"}");
+			return;
 		}
 
 		if (jwtToken != null) {
 			try {
-				// Validate the token using the jwtutil
-
+				// Validate the token using jwtutil
 				if (!jwtutil.validateToken(jwtToken)) {
 					response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is invalid or expired");
+					return;
 				}
 
-				// Extract claims from the token Claims
+				// Extract claims from the token
 				Claims claims = jwtutil.extractClaims(jwtToken);
 
 				// Construct UserDetails from the claims
@@ -56,20 +87,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 				@SuppressWarnings("unchecked")
 				List<String> roles = claims.get("roles", List.class);
-				System.out.println("roles");
-				// Create a UserDetails object without querying the database
+
 				UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "",
 						roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
-				System.out.println("userdetails");
+
 				// Set the authentication in the security context
 				Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
 						userDetails.getAuthorities());
 				SecurityContextHolder.getContext().setAuthentication(authentication);
-			} catch (ExpiredJwtException e) { // Handle token expiration
+			} catch (ExpiredJwtException e) {
 				response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is expired");
 				return;
-			} catch (Exception e) { // Handle other exceptions
-				response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is invalid ");
+			} catch (Exception e) {
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is invalid");
 				return;
 			}
 		}
@@ -77,4 +107,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		// Continue the filter chain
 		filterChain.doFilter(request, response);
 	}
+
 }

@@ -18,8 +18,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtUtil jwtutil;
@@ -31,6 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
+
+				filterChain.doFilter(request, response);
 		// Define a list of public URLs
 		String[] publicUrls = { "/api/auth/login", "/error" }; // Add your public endpoints here
 
@@ -45,6 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				break;
 			}
 		}
+		
 
 		// If it's a public URL, proceed without validation
 		if (isPublicUrl) {
@@ -59,6 +64,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			jwtToken = authorizationHeader.substring(7);
 		}
 		if (jwtToken == null) {
+
+			log.info("no token found");
+
 			// Set the HTTP status to 401 (Unauthorized)
 			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
@@ -67,7 +75,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 			// Write the error message directly to the response body
 			response.getWriter()
-					.write("{\"error\": \"unauthorized request redirectio=ng to login page , please log in.\"}");
+					.write("{\"error\": \"unauthorized request redirecting to login page , please log in.\"}");
 			return;
 		}
 
@@ -75,6 +83,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			try {
 				// Validate the token using jwtutil
 				if (!jwtutil.validateToken(jwtToken)) {
+					log.info("not a valid token");
 					response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token is invalid or expired");
 					return;
 				}

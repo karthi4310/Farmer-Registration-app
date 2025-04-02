@@ -46,7 +46,7 @@ public class SecurityConfig {
 						// Admin-only access
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						// All other requests require authentication
-						.anyRequest().authenticated())
+						.anyRequest().permitAll())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter
 
 		return http.build();

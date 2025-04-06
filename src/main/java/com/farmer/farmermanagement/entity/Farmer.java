@@ -1,137 +1,99 @@
 package com.farmer.farmermanagement.entity;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
+
+import com.farmer.farmermanagement.enums.Document;
+import com.farmer.farmermanagement.enums.Education;
 import com.farmer.farmermanagement.enums.Gender;
 import com.farmer.farmermanagement.enums.PortalAccess;
 import com.farmer.farmermanagement.enums.PortalRole;
-import com.farmer.farmermanagement.enums.Education;
-import com.farmer.farmermanagement.enums.Document;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.*;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
 public class Farmer {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @NotBlank(message = "Photo is required")
-    @Column(nullable = false)
-    private String photo;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @NotBlank(message = "Salutation is required")
-    @Column(nullable = false)
-    private String salutation;
+	@NotBlank
+	private String firstName;
 
-    @NotBlank(message = "First name is required")
-    @Column(nullable = false)
-    private String firstName;
+	private String MiddleName;
 
-    private String middleName;
-    private String lastName;
-    
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = "Gender is required")  
-    @Column(nullable = false)
-    private Gender gender;
+	@NotBlank
+	private String lastName;
 
-    @NotBlank(message = "Nationality is required")
-    @Column(nullable = false)
-    private String nationality;
+	@NotBlank(message = "Aadhar number is required")
+	@Column(unique = true)
+	private String aadharNumber;
 
-    @NotNull(message = "Date of birth is required")
-    @Past(message = "Date of birth must be in the past")
-    @Temporal(TemporalType.DATE)
-    @Column(nullable = false)
-    private Date dob;
+	@Email
+	@NotBlank(message = "Email is required")
+	private String email;
 
-    @Pattern(regexp = "\\d{10}", message = "Contact number must be exactly 10 digits")
-    @Column(nullable = false, unique = true)
-    private String contactNumber;
+	@NotBlank(message = "Phone number is required")
+	@Column(unique = true)
+	private String phoneNumber;
 
-    private String relationshipType;
+	@Enumerated(EnumType.STRING)
+	@NotNull
+	private Gender gender;
 
-    @NotBlank(message = "Father name is required")
-    @Column(nullable = false)
-    private String fatherName;
+	@Enumerated(EnumType.STRING)
+	@NotNull
+	private Education education;
 
-    @NotBlank(message = "Alternative number is required")
-    @Column(nullable = false)
-    @Pattern(regexp = "\\d{10}", message = "Alternative number must be exactly 10 digits")
-    private String alternativeNumber;
+	@Enumerated(EnumType.STRING)
+	private Document document;
 
-    @NotBlank(message = "Alternative no. type is required")
-    @Column(nullable = false)
-    private String alternativeNoType;
+	@NotBlank(message = "Document path is required")
+	private String documentPath;
 
-    @NotBlank(message = "Country is required")
-    @Column(nullable = false)
-    private String country;
+	@NotNull(message = "Date of birth is required")
+	private LocalDate dateOfBirth;
 
-    @NotBlank(message = "State is required")
-    @Column(nullable = false)
-    private String state;
+	@Enumerated(EnumType.STRING)
+	private PortalAccess portalAccess;
 
-    @NotBlank(message = "District is required")
-    @Column(nullable = false)
-    private String district;
+	@Enumerated(EnumType.STRING)
+	private PortalRole portalRole;
 
-    @NotBlank(message = "Block is required")
-    @Column(nullable = false)
-    private String block;
+	@NotBlank(message = "Farmer type is required")
+	private String farmerType;
 
-    @NotBlank(message = "Village is required")
-    @Column(nullable = false)
-    private String village;
+	@Embedded
+	private Address address;
 
-    @NotBlank(message = "Zipcode is required")
-    @Pattern(regexp = "\\d{5,6}", message = "Zipcode must be 5 or 6 digits")
-    @Column(nullable = false)
-    private String zipcode;
+	@OneToOne(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
+	private BankDetails bankDetails;
 
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = "Education is required") 
-    @Column(nullable = false)
-    private Education education;
+	@OneToOne(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
+	private LandDetails landDetails;
 
-    @Min(value = 0, message = "Farming experience cannot be negative")
-    private int farmingExperience;
-
-    @DecimalMin(value = "0.0", inclusive = true, message = "Net income cannot be negative")
-    private double netIncome;
-
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = "Document is required")
-    @Column(nullable = false)
-    private Document document;
-
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = "Portal role is required")
-    @Column(nullable = false)
-    private PortalRole portalRole;
-    
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = "Portal access is required")
-    @Column(nullable = false)
-    private PortalAccess portalAccess;
-
-    @OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Crop> crops;
-
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_details_id")
-    private BankDetails bankDetails;
-
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "land_details_id")
-    private LandDetails landDetails;
-
-
-
+	@OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Crop> crops;
 }

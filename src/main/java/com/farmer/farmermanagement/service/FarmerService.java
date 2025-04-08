@@ -5,14 +5,16 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.farmer.farmermanagement.dto.BankDetailsDto;
 import com.farmer.farmermanagement.dto.FarmerDto;
+import com.farmer.farmermanagement.dto.LandDetailsDto;
+import com.farmer.farmermanagement.entity.BankDetails;
 import com.farmer.farmermanagement.entity.Farmer;
+import com.farmer.farmermanagement.entity.LandDetails;
 import com.farmer.farmermanagement.exception.FarmerNotFoundException;
 import com.farmer.farmermanagement.mapper.AddressMapper;
-import com.farmer.farmermanagement.mapper.BankDetailsMapper;
 import com.farmer.farmermanagement.mapper.CropMapper;
 import com.farmer.farmermanagement.mapper.FarmerMapper;
-import com.farmer.farmermanagement.mapper.LandDetailsMapper;
 import com.farmer.farmermanagement.repository.FarmerRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -27,8 +29,6 @@ public class FarmerService {
 	private final FarmerMapper farmerMapper;
 	private final CropMapper cropMapper;
 	private final AddressMapper addressMapper;
-	private final BankDetailsMapper bankDetailsMapper;
-	private final LandDetailsMapper landDetailsMapper;
 
 	@Transactional
 	public FarmerDto createFarmer(FarmerDto farmerDto) {
@@ -71,8 +71,29 @@ public class FarmerService {
 
 		// Update embeddables directly
 		existing.setAddress(addressMapper.toEntity(farmerDto.getAddress()));
-		existing.setBankDetails(bankDetailsMapper.toEntity(farmerDto.getBankDetails()));
-		existing.setLandDetails(landDetailsMapper.toEntity(farmerDto.getLandDetails()));
+
+		BankDetailsDto bankDetailsDto = farmerDto.getBankDetails();
+		if (bankDetailsDto != null) {
+			BankDetails bankDetails = existing.getBankDetails();
+			bankDetails.setAccountNumber(bankDetailsDto.getAccountNumber());
+			bankDetails.setBankName(bankDetailsDto.getBankName().toString());
+			bankDetails.setIfscCode(bankDetailsDto.getIfscCode());
+		}
+		LandDetailsDto landDetailsDto = farmerDto.getLandDetails();
+		if (landDetailsDto != null) {
+			LandDetails landDetails = existing.getLandDetails();
+			landDetails.setBorewellDischarge(landDetailsDto.getBorewellDischarge());
+			landDetails.setBorewellLocation(landDetailsDto.getBorewellLocation());
+			landDetails.setCropType(landDetailsDto.getCropType());
+			landDetails.setGeoTag(landDetailsDto.getGeoTag());
+			landDetails.setIrrigationSource(landDetailsDto.getIrrigationSource());
+			landDetails.setLandSize(landDetailsDto.getLandSize());
+			landDetails.setSoilTest(landDetailsDto.getSoilTest());
+			landDetails.setSoilTestCertificate(landDetails.getSoilTestCertificate());
+			landDetails.setLatitude(landDetails.getLatitude());
+			landDetails.setLongitude(landDetailsDto.getLongitude());
+
+		}
 
 		// Handle crops with back-reference
 		if (farmerDto.getCrops() != null) {
